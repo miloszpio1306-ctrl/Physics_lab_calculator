@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Kalkulator Laboratoryjny Fizyki v4.0
+Kalkulator Laboratoryjny Fizyki
 Plik zachowujacy kompatybilnosc wsteczna.
 Projekt zostal podzielony na modulowa strukture:
   - calculations.py (silnik obliczen niepewnosci pomiarowych)
