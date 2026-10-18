@@ -4,7 +4,7 @@ Zaawansowany kalkulator laboratoryjny do automatyzacji obliczeń i rachunku niep
 
 ---
 
-## 📁 Struktura Projektu
+##Struktura Projektu
 
 Projekt został podzielony na przejrzyste moduły:
 
@@ -37,7 +37,7 @@ Instalacja zależności:
 pip install -r requirements.txt
 ```
 
-### 2. Start aplikacji
+###Start aplikacji
 
 Możesz uruchomić kalkulator na dwa sposoby:
 
