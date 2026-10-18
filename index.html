@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Laboratoryjny Fizyki</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+
+    <!-- GORNY PASEK NAWIGACJI -->
+    <div class="top-bar">
+        <div class="top-bar-header">
+            <div class="brand-title">
+                <span>Kalkulator Laboratoryjny Fizyki</span>
+                <span class="active-tab-indicator" id="currentTabLabel">Aktywne: Cw. 45</span>
+            </div>
+            <div class="top-actions">
+                <button class="btn-top" id="btnToggleTabs" onclick="toggleDrawer('tabsDrawer', 'btnToggleTabs')">
+                    Zakladki cwiczen ▾
+                </button>
+                <button class="btn-top" id="btnToggleHelp" onclick="toggleDrawer('helpDrawer', 'btnToggleHelp')">
+                    Pomoc / Instrukcja ▾
+                </button>
+                <a class="btn-top" href="/api/download_zip" title="Pobierz paczke .zip z podzielonymi plikami projektu">
+                    Pobierz pliki projektu (.zip)
+                </a>
+            </div>
+        </div>
+
+        <!-- SZUFLADA 1: ZAKLADKI CWICZEN -->
+        <div class="top-drawer" id="tabsDrawer">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+                <span style="font-size:0.78rem; color:var(--muted); font-weight:700; text-transform:uppercase;">
+                    Wybierz gotowe cwiczenie lub utworz nowa pusta zakladke:
+                </span>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-outline" onclick="saveCurrentTab()">Zapisz zmiany w zakladce</button>
+                    <button class="btn-outline" onclick="createNewCustomTab()">+ Nowa pusta zakladka</button>
+                </div>
+            </div>
+            <div class="tabs-bar" id="tabsBar"></div>
+        </div>
+
+        <!-- SZUFLADA 2: POMOC -->
+        <div class="top-drawer" id="helpDrawer">
+            <div class="help-grid">
+                <div class="help-box">
+                    <strong>1. Wiele szukanych wielkosci naraz</strong>
+                    W sekcji 1 kliknij <b>+ Dodaj szukana wielkosc (wzor)</b>, aby na podstawie tych samych pomiarow policzyc np. zarowno indukcje <code>B</code>, jak i ladunek wlasciwy <code>e_m</code>. W kolejnych wzorach mozesz uzywac symboli obliczonych wyzej!
+                </div>
+                <div class="help-box">
+                    <strong>2. Tryb Tabeli (Excel) vs Klasyczny</strong>
+                    <b>Tabela Punkt-po-Punkcie:</b> uzywaj, gdy w kazdej kolumnie zmieniasz parametry (np. 20 pomiarow w Cw. 45).<br>
+                    <b>Klasyczny:</b> najpierw uśrednia serie kazdej zmiennej, a potem wstawia srednie do wzorow.
+                </div>
+                <div class="help-box">
+                    <strong>3. Niepewnosc przyrzadu u_B(x)</strong>
+                    Wybierz <b>Bezposrednio u(x)</b>, jesli nie dzielisz niepewnosci przez pierwiastek z 3 (jak w arkuszu Excela Cw. 45). Wybierz <b>Rozklad jednostajny</b>, aby dzielic dzialke przez sqrt(3).
+                </div>
+                <div class="help-box">
+                    <strong>4. Rozwijane zakladki wynikow</strong>
+                    Po prawej stronie kazda szukana wielkosc otrzymuje wlasna rozwijana zakladke z wytluszczonym wynikiem koncowym, kafelkami KPI, testem zgodnosci z wartoscia tablicowa i kodem LaTeX.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <!-- LEWA KOLUMNA: WZORY I DANE WEJSCIOWE -->
+        <div>
+            <div class="card">
+                <div class="card-title">
+                    <span>1. Szukane wielkosci (wzory do obliczenia)</span>
+                    <button class="btn-outline" onclick="addTargetFormula()">+ Dodaj szukana wielkosc (wzor)</button>
+                </div>
+
+                <div class="row" style="margin-bottom:14px;">
+                    <div>
+                        <label>Tryb liczenia serii pomiarowych</label>
+                        <select id="calcMode" onchange="autoSaveDraft()">
+                            <option value="point_by_point" selected>Tabela Punkt-po-Punkcie (jak w Excelu: liczy kazda kolumne osobno)</option>
+                            <option value="mean_first">Klasyczny (usrednij zmienne przed wstawieniem do wzoru)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Wspolczynnik rozszerzenia (k)</label>
+                        <select id="kFactor" onchange="autoSaveDraft()">
+                            <option value="1" selected>k = 1 (niepewnosc standardowa u_c)</option>
+                            <option value="2">k = 2 (niepewnosc rozszerzona 2*u_c)</option>
+                            <option value="3">k = 3 (niepewnosc rozszerzona 3*u_c)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Kontener na 1 lub wiecej wzorow (niewiadomych) -->
+                <div id="targetsContainer"></div>
+
+                <details class="accordion" style="margin-top:8px; margin-bottom:0;">
+                    <summary>
+                        <span>Wbudowane stale fizyczne (dostepne w kazdym wzorze)</span>
+                        <span class="acc-badge">Rozwin ▾</span>
+                    </summary>
+                    <div class="accordion-body" style="font-size:0.79rem; color:var(--muted);">
+                        <code>mu_0</code> (4*pi*10^-7 H/m) • <code>c</code> (2.998e8 m/s) • <code>h</code> (6.626e-34 J*s) • <code>q_e</code> (1.602e-19 C) •
+                        <code>m_e</code> (9.109e-31 kg) • <code>k_B</code> (1.381e-23 J/K) • <code>eps_0</code> (8.854e-12 F/m) • <code>g_krk</code> (9.8105 m/s^2) • <code>pi</code>
+                    </div>
+                </details>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span>2. Zmienne pomiarowe (wspolne dane wejsciowe)</span>
+                    <button class="btn-outline" onclick="addVariable()">+ Dodaj zmienna</button>
+                </div>
+                <div id="variablesContainer"></div>
+                <button class="btn-calc" onclick="calculatePropagation()">
+                    Przelicz wszystkie szukane wielkosci
+                </button>
+            </div>
+        </div>
+
+        <!-- PRAWA KOLUMNA: WYNIKI W ROZWIJANYCH ZAKLADKACH -->
+        <div>
+            <div id="errorBox" class="error-msg"></div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span>3. Wyniki obliczen i weryfikacja niepewnosci</span>
+                </div>
+                <div id="resultsContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
